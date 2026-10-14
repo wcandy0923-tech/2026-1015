@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 與人權學習單(中年級) - 互動學習與管理平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for high-resolution PNG image export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- HTML2PDF Library for exporting complete worksheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Custom Google Fonts for friendly rounded text -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+            background-color: #f0fdf4;
+            color: #1e293b;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #8b5cf6 100%);
+        }
+        .signature-canvas {
+            border: 2px dashed #94a3b8;
+            background-color: #ffffff;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        /* Certificate Specific Styles */
+        .certificate-frame {
+            border: 12px double #0d9488;
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+            box-shadow: inset 0 0 20px rgba(13, 148, 136, 0.1);
+        }
+        .certificate-corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-color: #059669;
+        }
+        /* Printable & PDF custom styles */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: #ffffff !important; }
+            .card-shadow { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="no-print bg-white/90 backdrop-blur border-b border-emerald-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xl shadow-md">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">我是 AI 小達人：負責任使用 AI</h1>
+                    <p class="text-xs text-slate-500">AI 與人權學習單 (中年級) 互動學習系統</p>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="flex bg-slate-100 p-1 rounded-xl gap-1 border border-slate-200">
+                <button id="btn-tab-student" onclick="switchTab('student')" class="px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 bg-white text-emerald-700 shadow-sm">
+                    <i class="fa-solid fa-child-reaching"></i> 學生前台填答
+                </button>
+                <button id="btn-tab-teacher" onclick="switchTab('teacher')" class="px-4 py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-chalkboard-user"></i> 教師後台管理
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ================================================================= -->
+        <!-- STUDENT FRONTEND SECTION (前台學生學習單) -->
+        <!-- ================================================================= -->
+        <section id="student-view" class="space-y-6">
+            
+            <!-- Controls Bar for Export & Actions -->
+            <div class="no-print bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-2 text-emerald-800 text-sm font-medium">
+                    <i class="fa-solid fa-circle-info text-emerald-600 text-base"></i>
+                    <span>請完整填寫下列學習單，完成後點擊底部提交按鈕即可產生並下載榮譽證書！</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="resetWorksheet()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 bg-white border border-slate-300 rounded-lg transition">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> 重填學習單
+                    </button>
+                    <button onclick="openCertificateModal()" class="px-4 py-1.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-sm transition flex items-center gap-1">
+                        <i class="fa-solid fa-award"></i> 預覽/下載榮譽證書
+                    </button>
+                    <button onclick="downloadAsPNG()" class="px-4 py-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm transition flex items-center gap-1">
+                        <i class="fa-solid fa-file-image"></i> 下載 PNG 學習單圖片
+                    </button>
+                </div>
+            </div>
+
+            <!-- Worksheet Container (Target for PDF Generation) -->
+            <div id="worksheet-document" class="bg-white rounded-3xl border border-slate-200 p-6 md:p-10 shadow-lg space-y-8 relative overflow-hidden">
+                
+                <!-- Decorative Watermark / Header Badge -->
+                <div class="text-center border-b-2 border-dashed border-emerald-100 pb-6 relative">
+                    <div class="inline-block bg-emerald-100 text-emerald-800 font-extrabold text-xs px-3 py-1 rounded-full mb-2">
+                        人權與資訊素養素養課程
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-wide">
+                        我是 AI 小達人：負責任使用 AI
+                    </h2>
+                    <p class="text-slate-500 text-xs md:text-sm mt-1">AI 與人權學習單 (中年級)</p>
+
+                    <!-- Header Inputs: Grade, Class, Name, Date -->
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold text-slate-700 text-sm whitespace-nowrap"><i class="fa-solid fa-graduation-cap text-emerald-600 mr-1"></i>年級與班級:</label>
+                            <input type="text" id="input-grade-class" placeholder="例：三年1班" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold text-slate-700 text-sm whitespace-nowrap"><i class="fa-solid fa-user text-emerald-600 mr-1"></i>姓名/座號:</label>
+                            <input type="text" id="input-student-name" placeholder="請輸入姓名與號碼" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold text-slate-700 text-sm whitespace-nowrap"><i class="fa-regular fa-calendar-check text-emerald-600 mr-1"></i>日期:</label>
+                            <input type="date" id="input-date" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第一關:「思考」小達人 -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 bg-amber-50 p-3 rounded-xl border-l-4 border-amber-500">
+                        <span class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center text-sm shadow">1</span>
+                        <h3 class="font-bold text-lg text-amber-900">第一關:「思考」小達人</h3>
+                    </div>
+                    <p class="text-slate-700 text-sm font-medium leading-relaxed pl-1">
+                        1. 下列使用 AI 的步驟，請按照正確順序排排看（先選的寫 1，第二選的寫 2，第三選寫 3）：
+                    </p>
+
+                    <div class="space-y-3 pl-2 md:pl-4">
+                        <!-- Option A -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-300 transition">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q1-opt-A" class="bg-white border-2 border-amber-400 font-bold text-amber-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="">請選擇</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">A. 看到AI的答案後,再想一想、看一看自己有沒有學會。</span>
+                        </div>
+
+                        <!-- Option B -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-300 transition">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q1-opt-B" class="bg-white border-2 border-amber-400 font-bold text-amber-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="">請選擇</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">B. 遇到問題時,先自己想一想。</span>
+                        </div>
+
+                        <!-- Option C -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-300 transition">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q1-opt-C" class="bg-white border-2 border-amber-400 font-bold text-amber-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="">請選擇</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">C. 自己想不出來時,再請AI 幫忙。</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二關:「查證」小神探 -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center gap-3 bg-sky-50 p-3 rounded-xl border-l-4 border-sky-500">
+                        <span class="w-8 h-8 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center text-sm shadow">2</span>
+                        <h3 class="font-bold text-lg text-sky-900">第二關:「查證」小神探</h3>
+                    </div>
+                    <p class="text-slate-700 text-sm font-medium leading-relaxed pl-1">
+                        2. 想像一下,如果AI告訴你:「玉山是世界上最高的山。」你會怎麼做?(可複選,請打勾)
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 md:pl-4">
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-sky-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q2-opt-A" class="mt-1 w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span class="text-slate-800 text-sm">A. 直接相信AI把答案寫進作業裡!</span>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-sky-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q2-opt-B" class="mt-1 w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span class="text-slate-800 text-sm">B. 多翻書或查百科全書,看答案對不對。</span>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-sky-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q2-opt-C" class="mt-1 w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span class="text-slate-800 text-sm">C. 多找幾個資料比較,或問老師和家長。</span>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-sky-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q2-opt-D" class="mt-1 w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                            <span class="text-slate-800 text-sm">D. 如果發現AI講錯了,告訴AI正確答案。</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 第三關:我是「尊重與保護」安全官 -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center gap-3 bg-purple-50 p-3 rounded-xl border-l-4 border-purple-500">
+                        <span class="w-8 h-8 rounded-full bg-purple-500 text-white font-bold flex items-center justify-center text-sm shadow">3</span>
+                        <h3 class="font-bold text-lg text-purple-900">第三關:我是「尊重與保護」安全官</h3>
+                    </div>
+                    <p class="text-slate-700 text-sm font-medium leading-relaxed pl-1">
+                        3. 配合題(請填入對應字母):
+                    </p>
+
+                    <!-- Principles Reference Table -->
+                    <div class="bg-purple-50/50 p-4 rounded-xl border border-purple-100 mb-3 text-xs md:text-sm text-purple-900">
+                        <p class="font-bold mb-2 text-purple-950"><i class="fa-solid fa-shield-halved mr-1"></i>應該遵守的原則選項：</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div class="bg-white p-2 rounded-lg border border-purple-200"><strong>A.</strong> 要經過自己的思考完成作業</div>
+                            <div class="bg-white p-2 rounded-lg border border-purple-200"><strong>B.</strong> 保持有禮貌的互動</div>
+                            <div class="bg-white p-2 rounded-lg border border-purple-200"><strong>C.</strong> 不告訴AI自己的個人資料 (保護隱私)</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pl-2 md:pl-4">
+                        <!-- Match 1 -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q3-m1" class="bg-white border-2 border-purple-400 font-bold text-purple-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 max-w-[220px] md:max-w-xs">
+                                    <option value="">請選擇原則</option>
+                                    <option value="A">A. 要經過自己的思考完成作業</option>
+                                    <option value="B">B. 保持有禮貌的互動</option>
+                                    <option value="C">C. 不告訴AI自己的個人資料 (保護隱私)</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">(1) 在AI的對話框裡輸入自己的身分證字號或住址</span>
+                        </div>
+
+                        <!-- Match 2 -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q3-m2" class="bg-white border-2 border-purple-400 font-bold text-purple-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 max-w-[220px] md:max-w-xs">
+                                    <option value="">請選擇原則</option>
+                                    <option value="A">A. 要經過自己的思考完成作業</option>
+                                    <option value="B">B. 保持有禮貌的互動</option>
+                                    <option value="C">C. 不告訴AI自己的個人資料 (保護隱私)</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">(2) 直接把 AI 寫好的作業複製貼上當成自己的功課</span>
+                        </div>
+
+                        <!-- Match 3 -->
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="flex items-center gap-1">
+                                <span class="text-slate-500 font-bold text-sm">(</span>
+                                <select id="q3-m3" class="bg-white border-2 border-purple-400 font-bold text-purple-800 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 max-w-[220px] md:max-w-xs">
+                                    <option value="">請選擇原則</option>
+                                    <option value="A">A. 要經過自己的思考完成作業</option>
+                                    <option value="B">B. 保持有禮貌的互動</option>
+                                    <option value="C">C. 不告訴AI自己的個人資料 (保護隱私)</option>
+                                </select>
+                                <span class="text-slate-500 font-bold text-sm">)</span>
+                            </div>
+                            <span class="text-slate-800 font-medium text-sm md:text-base">(3) 使用AI 時對它說「請」、「謝謝你,你也很棒!」。</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第四關:我是「善用」AI的使用者 -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center gap-3 bg-emerald-50 p-3 rounded-xl border-l-4 border-emerald-500">
+                        <span class="w-8 h-8 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-sm shadow">4</span>
+                        <h3 class="font-bold text-lg text-emerald-900">第四關:我是「善用」AI的使用者</h3>
+                    </div>
+                    <p class="text-slate-700 text-sm font-medium leading-relaxed pl-1">
+                        4. 我可以使用 AI 來幫我做什麼事呢?請勾選或寫下來:
+                    </p>
+
+                    <div class="space-y-3 pl-2 md:pl-4">
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q4-opt-1" class="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            <span class="text-slate-800 text-sm md:text-base">查詢統整資料(例如:認識動物、了解歷史)</span>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q4-opt-2" class="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            <span class="text-slate-800 text-sm md:text-base">給我解決策略(例如:解決生活或學習的問題)</span>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition">
+                            <input type="checkbox" id="q4-opt-3" class="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            <span class="text-slate-800 text-sm md:text-base">創造故事點子(例如:想故事、設計角色、畫畫靈感)</span>
+                        </label>
+
+                        <!-- Custom Ideas text area -->
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                            <label class="font-bold text-slate-700 text-sm block">其他想法:</label>
+                            <textarea id="q4-other-text" rows="2" placeholder="請寫下你認為 AI 還能幫你做什麼事..." class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 我的AI 行動宣言 -->
+                <div class="pt-4 border-t-2 border-dashed border-slate-200">
+                    <div class="bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 text-white/10 text-9xl font-black select-none pointer-events-none">
+                            <i class="fa-solid fa-shield-cat"></i>
+                        </div>
+
+                        <h3 class="text-xl md:text-2xl font-black text-center mb-4 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-star text-amber-300"></i> 我的 AI 行動宣言 <i class="fa-solid fa-star text-amber-300"></i>
+                        </h3>
+
+                        <!-- Direct verbatim Pledge Text with Interactive Checkboxes -->
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 md:p-6 text-sm md:text-base font-bold leading-relaxed text-emerald-50 border border-white/20 space-y-3">
+                            <p class="text-base md:text-lg text-amber-200 font-extrabold text-center mb-2">「我願意負責任地使用AI! 先自己想一想,再請AI幫忙。」</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="flex items-center gap-3 bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/20 cursor-pointer transition">
+                                    <input type="checkbox" id="pledge-chk-1" class="w-5 h-5 text-amber-400 rounded focus:ring-amber-300 border-white/40">
+                                    <span class="text-amber-100 font-extrabold">AI說的話,我會查一查。</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/20 cursor-pointer transition">
+                                    <input type="checkbox" id="pledge-chk-2" class="w-5 h-5 text-amber-400 rounded focus:ring-amber-300 border-white/40">
+                                    <span class="text-amber-100 font-extrabold">不把自己的個人資料告訴AI。</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/20 cursor-pointer transition">
+                                    <input type="checkbox" id="pledge-chk-3" class="w-5 h-5 text-amber-400 rounded focus:ring-amber-300 border-white/40">
+                                    <span class="text-amber-100 font-extrabold">不直接抄AI的答案,自己做功課。</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/20 cursor-pointer transition">
+                                    <input type="checkbox" id="pledge-chk-4" class="w-5 h-5 text-amber-400 rounded focus:ring-amber-300 border-white/40">
+                                    <span class="text-amber-100 font-extrabold">有禮貌地使用AI。</span>
+                                </label>
+                            </div>
+
+                            <p class="text-center text-amber-200 font-extrabold mt-3 text-base md:text-lg">「一起成為AI時代的好公民!」</p>
+                        </div>
+
+                        <!-- Certification Badge Status Box -->
+                        <div class="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white rounded-2xl p-4 text-slate-800 shadow-inner">
+                            <div class="w-full md:w-2/3 space-y-1 text-center md:text-left">
+                                <h4 class="font-bold text-slate-800 text-sm md:text-base flex items-center justify-center md:justify-start gap-1">
+                                    <i class="fa-solid fa-square-check text-emerald-600"></i> 行動宣言承諾狀態：
+                                </h4>
+                                <p class="text-xs text-slate-500">請確認並勾選上方宣言中的 4 項原則，完成後即可獲頒 AI 負責任小達人認證！</p>
+                            </div>
+
+                            <div class="w-full md:w-1/3 flex flex-col items-center justify-center p-2 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                                <div id="badge-display" class="hidden">
+                                    <div class="w-16 h-16 rounded-full bg-amber-400 text-amber-900 font-black flex items-center justify-center text-2xl shadow-lg mx-auto mb-1 animate-bounce">
+                                        <i class="fa-solid fa-award"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-amber-700 block">AI 負責任小達人</span>
+                                    <span class="text-[10px] text-slate-500" id="submission-timestamp">已認證</span>
+                                </div>
+                                <div id="badge-placeholder" class="text-slate-400 text-xs py-4">
+                                    <i class="fa-regular fa-id-badge text-3xl mb-1 block"></i>
+                                    完成宣言勾選與提交即可獲得 AI 勳章
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Auto-Score / Review Box -->
+                <div id="result-feedback-panel" class="hidden no-print bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-700 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span id="score-pill" class="bg-emerald-500 text-slate-950 font-black px-3 py-1 rounded-full text-base">得分: 100 分</span>
+                            <h4 class="font-bold text-lg text-emerald-400">挑戰成果評估</h4>
+                        </div>
+                        <span id="completion-status-badge" class="text-xs px-2.5 py-1 bg-emerald-950 text-emerald-300 rounded-md border border-emerald-800 font-medium">已完成全數挑戰</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <p class="font-bold text-amber-400 mb-1">第一關 思考順序:</p>
+                            <p id="feedback-q1" class="text-slate-300">檢查中...</p>
+                        </div>
+                        <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <p class="font-bold text-sky-400 mb-1">第二關 查證觀念:</p>
+                            <p id="feedback-q2" class="text-slate-300">檢查中...</p>
+                        </div>
+                        <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <p class="font-bold text-purple-400 mb-1">第三關 安全配合題:</p>
+                            <p id="feedback-q3" class="text-slate-300">檢查中...</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <p class="text-xs text-slate-400"><i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-1"></i>資料已自動同步至教師後台系統</p>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openCertificateModal()" class="px-4 py-2 text-xs font-extrabold text-slate-900 bg-amber-400 hover:bg-amber-300 rounded-xl shadow transition flex items-center gap-1">
+                                <i class="fa-solid fa-award"></i> 產生並下載「AI 小達人榮譽證書」圖片
+                            </button>
+                            <button onclick="downloadAsPNG()" class="px-3 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 rounded-xl transition">
+                                <i class="fa-solid fa-file-image mr-1"></i> 下載學習單紀錄圖片
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button Area -->
+                <div class="no-print pt-4 text-center">
+                    <button onclick="submitWorksheet()" id="btn-submit" class="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-lg font-extrabold rounded-2xl shadow-xl hover:shadow-2xl transition transform active:scale-95 flex items-center justify-center gap-3 mx-auto">
+                        <i class="fa-solid fa-paper-plane"></i> 提交學習單並頒發榮譽證書
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- CERTIFICATE EXPORT MODAL & TEMPLATE (榮譽證書模組) -->
+        <!-- ================================================================= -->
+        <div id="certificate-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden overflow-y-auto">
+            <div class="bg-white rounded-3xl max-w-3xl w-full p-4 md:p-6 space-y-4 shadow-2xl relative my-8">
+                <div class="no-print flex justify-between items-center border-b border-slate-200 pb-3">
+                    <h3 class="font-extrabold text-slate-800 text-base md:text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-award text-amber-500 text-xl"></i> AI 負責任小達人榮譽證書預覽
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadCertificatePNG()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center gap-1">
+                            <i class="fa-solid fa-image"></i> 下載證書 PNG 圖片
+                        </button>
+                        <button onclick="closeCertificateModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CERTIFICATE WRAPPER FOR PDF EXPORT -->
+                <div id="certificate-document" class="certificate-frame p-6 md:p-10 rounded-2xl relative text-center space-y-6 overflow-hidden my-2">
+                    
+                    <!-- Decorative Corner Frames -->
+                    <div class="certificate-corner top-3 left-3 border-t-4 border-l-4"></div>
+                    <div class="certificate-corner top-3 right-3 border-t-4 border-r-4"></div>
+                    <div class="certificate-corner bottom-3 left-3 border-b-4 border-l-4"></div>
+                    <div class="certificate-corner bottom-3 right-3 border-b-4 border-r-4"></div>
+
+                    <!-- Header Crest & Title -->
+                    <div class="space-y-2 pt-2">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 text-amber-600 text-3xl shadow-inner border-2 border-amber-300">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <p class="text-xs font-black tracking-widest text-teal-700 uppercase">HUMAN RIGHTS & AI LITERACY CERTIFICATION</p>
+                        <h2 class="text-2xl md:text-4xl font-black text-slate-800 tracking-wider">
+                            AI 負責任小達人 榮譽證書
+                        </h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-teal-500 to-amber-400 mx-auto rounded-full"></div>
+                    </div>
+
+                    <!-- Student Citation Text -->
+                    <div class="space-y-3 py-2">
+                        <p class="text-sm md:text-base text-slate-600">茲證明</p>
+                        <div class="inline-block border-b-2 border-slate-800 px-6 py-1">
+                            <span id="cert-student-info" class="text-xl md:text-2xl font-extrabold text-teal-900">
+                                三年1班 王小明 同學
+                            </span>
+                        </div>
+                        <p class="text-sm md:text-base text-slate-700 leading-relaxed max-w-xl mx-auto font-medium px-4">
+                            完成「<span class="font-bold text-slate-900">我是 AI 小達人：負責任使用 AI</span>」人權與資訊素養專題課程，通過思考排序、事實查證、安全防範與善用 AI 之四大關卡考驗，並恪守「AI 行動宣言」全數承諾，表現優異，特頒此證以資鼓勵！
+                        </p>
+                    </div>
+
+                    <!-- Achievement Badges & Summary -->
+                    <div class="bg-white/80 backdrop-blur border border-teal-100 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-left max-w-xl mx-auto shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-black">
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold">課程評估成績</p>
+                                <p id="cert-score-display" class="text-sm font-extrabold text-teal-700">100 分 (滿分)</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-black">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold">行動宣言承諾</p>
+                                <p class="text-sm font-extrabold text-amber-700">全數同意遵守</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-black">
+                                <i class="fa-regular fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold">認證日期</p>
+                                <p id="cert-date-display" class="text-sm font-extrabold text-indigo-700">2026/10/15</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certificate Footer Seal & Signatures -->
+                    <div class="pt-4 flex justify-between items-end max-w-xl mx-auto text-left text-xs text-slate-500 border-t border-dashed border-teal-200">
+                        <div class="space-y-1">
+                            <p class="font-bold text-slate-700"><i class="fa-solid fa-school text-teal-600 mr-1"></i>發證單位：人權與資訊素養學習推廣小組</p>
+                            <p id="cert-id-display" class="text-[10px] text-slate-400">證書編號：AI-20261015-001</p>
+                        </div>
+                        
+                        <!-- Official Stamp Seal -->
+                        <div class="relative flex flex-col items-center justify-center">
+                            <div class="w-20 h-20 rounded-full border-2 border-red-500 text-red-500 flex flex-col items-center justify-center p-1 transform rotate-[-12deg] opacity-85 select-none pointer-events-none">
+                                <span class="text-[8px] font-bold">AI 負責任小達人</span>
+                                <i class="fa-solid fa-certificate text-base my-0.5"></i>
+                                <span class="text-[8px] font-black tracking-widest">審核通過</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="no-print flex justify-end gap-2 pt-2">
+                    <button onclick="closeCertificateModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                        關閉預覽
+                    </button>
+                    <button onclick="downloadCertificatePNG()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center gap-1">
+                        <i class="fa-solid fa-download"></i> 下載榮譽證書 PNG 圖片
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- TEACHER BACKEND SECTION (後台教師管理中心) -->
+        <!-- ================================================================= -->
+        <section id="teacher-view" class="hidden space-y-6">
+            
+            <!-- Dashboard Top Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">總提交份數</p>
+                        <h3 id="stat-total-count" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">平均答對率 / 得分</p>
+                        <h3 id="stat-avg-score" class="text-2xl font-black text-slate-800 mt-1">0 分</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">思考排序滿分率</p>
+                        <h3 id="stat-q1-rate" class="text-2xl font-black text-slate-800 mt-1">0%</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">隱私維護完全達標</p>
+                        <h3 id="stat-q3-rate" class="text-2xl font-black text-slate-800 mt-1">0%</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Toolbar & Data Export -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-list-check text-emerald-600 mr-2"></i>學生學習單提交紀錄列表</h3>
+                    <span id="badge-submission-count" class="bg-slate-100 text-slate-700 text-xs px-2.5 py-0.5 rounded-full border border-slate-300 font-bold">0 筆數據</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="loadDemoData()" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition border border-slate-300">
+                        <i class="fa-solid fa-database mr-1"></i> 載入測試範例數據
+                    </button>
+                    <button onclick="exportToCSV()" class="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition">
+                        <i class="fa-solid fa-file-csv mr-1"></i> 匯出 CSV 檔
+                    </button>
+                    <button onclick="exportToJSON()" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition">
+                        <i class="fa-solid fa-file-code mr-1"></i> 匯出 JSON 檔
+                    </button>
+                    <button onclick="clearAllData()" class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition">
+                        <i class="fa-solid fa-trash-can mr-1"></i> 清除紀錄
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submissions Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4">#</th>
+                                <th class="p-4">提交時間</th>
+                                <th class="p-4">班級</th>
+                                <th class="p-4">學生姓名</th>
+                                <th class="p-4">評估得分</th>
+                                <th class="p-4">思考排序 (Q1)</th>
+                                <th class="p-4">安全配合 (Q3)</th>
+                                <th class="p-4 text-center">詳細資料 / 操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submission-table-body" class="divide-y divide-slate-100 text-slate-700">
+                    <!-- Dynamic Content Inserted via JS -->
+                </tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="p-10 text-center text-slate-400">
+                    <i class="fa-solid fa-inbox text-4xl mb-2 text-slate-300 block"></i>
+                    <p class="font-medium text-sm">目前尚無提交紀錄，可至前台填寫並提交，或點擊上方「載入測試範例數據」。</p>
+                </div>
+            </div>
+
+            <!-- Detail Modal -->
+            <div id="detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+                <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl relative">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-lg text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-emerald-600"></i> 學生學習單提交明細
+                        </h3>
+                        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">
+                            &times;
+                        </button>
+                    </div>
+
+                    <div id="modal-content" class="space-y-4 text-sm text-slate-700">
+                        <!-- Filled by JS -->
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex justify-end">
+                        <button onclick="closeDetailModal()" class="px-5 py-2 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-900 transition">
+                            關閉視窗
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="no-print bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
+        <p>AI 與人權學習單 (中年級) 互動式教學系統 &copy; 負責任使用 AI 專題課程</p>
+    </footer>
+
+    <script>
+        // Global Local Database
+        let submissions = JSON.parse(localStorage.getItem('ai_worksheet_submissions') || '[]');
+
+        // Initialize on load
+        window.onload = function() {
+            setDefaultDate();
+            renderTable();
+            updateDashboardStats();
+        };
+
+        // Set default date to today
+        function setDefaultDate() {
+            const dateInput = document.getElementById('input-date');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+        }
+
+        // Switch between Student Frontend and Teacher Backend views
+        function switchTab(tabName) {
+            const studentView = document.getElementById('student-view');
+            const teacherView = document.getElementById('teacher-view');
+            const btnStudent = document.getElementById('btn-tab-student');
+            const btnTeacher = document.getElementById('btn-tab-teacher');
+
+            if (tabName === 'student') {
+                studentView.classList.remove('hidden');
+                teacherView.classList.add('hidden');
+                btnStudent.className = "px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 bg-white text-emerald-700 shadow-sm";
+                btnTeacher.className = "px-4 py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2";
+            } else {
+                studentView.classList.add('hidden');
+                teacherView.classList.remove('hidden');
+                btnTeacher.className = "px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 bg-white text-emerald-700 shadow-sm";
+                btnStudent.className = "px-4 py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2";
+                renderTable();
+                updateDashboardStats();
+            }
+        }
+
+        // Reset all inputs on the worksheet
+        function resetWorksheet() {
+            document.getElementById('input-grade-class').value = '';
+            document.getElementById('input-student-name').value = '';
+            setDefaultDate();
+            
+            document.getElementById('q1-opt-A').value = '';
+            document.getElementById('q1-opt-B').value = '';
+            document.getElementById('q1-opt-C').value = '';
+
+            ['q2-opt-A', 'q2-opt-B', 'q2-opt-C', 'q2-opt-D'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+
+            ['q3-m1', 'q3-m2', 'q3-m3'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+
+            ['q4-opt-1', 'q4-opt-2', 'q4-opt-3'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+            document.getElementById('q4-other-text').value = '';
+
+            ['pledge-chk-1', 'pledge-chk-2', 'pledge-chk-3', 'pledge-chk-4'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+
+            document.getElementById('result-feedback-panel').classList.add('hidden');
+            document.getElementById('badge-display').classList.add('hidden');
+            document.getElementById('badge-placeholder').classList.remove('hidden');
+        }
+
+        // Download entire worksheet as PNG Image
+        function downloadAsPNG() {
+            const studentName = document.getElementById('input-student-name').value.trim() || '學生';
+            const gradeClass = document.getElementById('input-grade-class').value.trim() || '中年級';
+            const element = document.getElementById('worksheet-document');
+
+            if (typeof html2canvas !== 'undefined') {
+                html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                    const image = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `AI與人權學習單_${gradeClass}_${studentName}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }).catch(err => {
+                    console.error("Canvas export error:", err);
+                    alert("圖片產生失敗，請再試一次。");
+                });
+            } else {
+                window.print();
+            }
+        }
+        // Alias for backward compatibility
+        const downloadAsPDF = downloadAsPNG;
+
+        // Open Certificate Preview Modal
+        function openCertificateModal(submissionId) {
+            let record = null;
+            if (submissionId) {
+                record = submissions.find(s => s.id === submissionId);
+            }
+
+            const gradeClass = record ? record.gradeClass : (document.getElementById('input-grade-class').value.trim() || '中年級');
+            const studentName = record ? record.studentName : (document.getElementById('input-student-name').value.trim() || '學生');
+            const dateVal = record ? record.dateVal : (document.getElementById('input-date').value || new Date().toISOString().split('T')[0]);
+            const score = record ? record.score : calculateCurrentScore();
+            const certId = record ? record.id : Date.now();
+
+            document.getElementById('cert-student-info').innerText = `${gradeClass} ${studentName} 同學`;
+            document.getElementById('cert-score-display').innerText = `${score} 分`;
+            document.getElementById('cert-date-display').innerText = dateVal;
+            document.getElementById('cert-id-display').innerText = `證書編號：AI-${certId.toString().slice(-8)}`;
+
+            document.getElementById('certificate-modal').classList.remove('hidden');
+        }
+
+        function closeCertificateModal() {
+            document.getElementById('certificate-modal').classList.add('hidden');
+        }
+
+        // Helper to estimate current score before submitting
+        function calculateCurrentScore() {
+            let score = 0;
+            const q1A = document.getElementById('q1-opt-A').value;
+            const q1B = document.getElementById('q1-opt-B').value;
+            const q1C = document.getElementById('q1-opt-C').value;
+            if (q1B === '1' && q1C === '2' && q1A === '3') score += 35;
+
+            const q2A = document.getElementById('q2-opt-A').checked;
+            const q2B = document.getElementById('q2-opt-B').checked;
+            const q2C = document.getElementById('q2-opt-C').checked;
+            const q2D = document.getElementById('q2-opt-D').checked;
+            if (!q2A && q2B && q2C && q2D) score += 35;
+            else if (q2B && q2C) score += 20;
+
+            const q3m1 = document.getElementById('q3-m1').value;
+            const q3m2 = document.getElementById('q3-m2').value;
+            const q3m3 = document.getElementById('q3-m3').value;
+            if (q3m1 === 'C') score += 10;
+            if (q3m2 === 'A') score += 10;
+            if (q3m3 === 'B') score += 10;
+
+            return score;
+        }
+
+        // Download Certificate as PNG Image
+        function downloadCertificatePNG() {
+            const studentName = document.getElementById('input-student-name').value.trim() || '學生';
+            const gradeClass = document.getElementById('input-grade-class').value.trim() || '中年級';
+            const element = document.getElementById('certificate-document');
+
+            if (typeof html2canvas !== 'undefined') {
+                html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                    const image = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `AI負責任小達人_榮譽證書_${gradeClass}_${studentName}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }).catch(err => {
+                    console.error("Canvas export error:", err);
+                    alert("證書圖片產生失敗，請再試一次。");
+                });
+            } else {
+                window.print();
+            }
+        }
+        // Alias for backward compatibility
+        const downloadCertificatePDF = downloadCertificatePNG;
+
+        // Submit and Scoring Logic
+        function submitWorksheet() {
+            const gradeClass = document.getElementById('input-grade-class').value.trim();
+            const studentName = document.getElementById('input-student-name').value.trim();
+            const dateVal = document.getElementById('input-date').value;
+
+            if (!gradeClass || !studentName) {
+                alert('請填寫「年級與班級」以及「姓名/座號」！');
+                return;
+            }
+
+            // Check Pledge items
+            const p1 = document.getElementById('pledge-chk-1').checked;
+            const p2 = document.getElementById('pledge-chk-2').checked;
+            const p3 = document.getElementById('pledge-chk-3').checked;
+            const p4 = document.getElementById('pledge-chk-4').checked;
+
+            if (!p1 || !p2 || !p3 || !p4) {
+                alert('請勾選「我的 AI 行動宣言」中的所有承諾項目，一起成為 AI 時代的好公民！');
+                return;
+            }
+
+            // Q1 values (Correct order: B=1, C=2, A=3)
+            const q1A = document.getElementById('q1-opt-A').value;
+            const q1B = document.getElementById('q1-opt-B').value;
+            const q1C = document.getElementById('q1-opt-C').value;
+
+            // Q2 values (Correct: B, C, D checked, A unchecked)
+            const q2A = document.getElementById('q2-opt-A').checked;
+            const q2B = document.getElementById('q2-opt-B').checked;
+            const q2C = document.getElementById('q2-opt-C').checked;
+            const q2D = document.getElementById('q2-opt-D').checked;
+
+            // Q3 values (Correct: (1)->C, (2)->A, (3)->B)
+            const q3m1 = document.getElementById('q3-m1').value;
+            const q3m2 = document.getElementById('q3-m2').value;
+            const q3m3 = document.getElementById('q3-m3').value;
+
+            // Q4 values
+            const q4opt1 = document.getElementById('q4-opt-1').checked;
+            const q4opt2 = document.getElementById('q4-opt-2').checked;
+            const q4opt3 = document.getElementById('q4-opt-3').checked;
+            const q4Other = document.getElementById('q4-other-text').value.trim();
+
+            // Grade Calculation
+            let score = 0;
+            let q1Correct = (q1B === '1' && q1C === '2' && q1A === '3');
+            if (q1Correct) score += 35;
+
+            let q2Correct = (!q2A && q2B && q2C && q2D);
+            if (q2Correct) score += 35;
+            else if (q2B && q2C) score += 20;
+
+            let q3Score = 0;
+            if (q3m1 === 'C') q3Score += 10;
+            if (q3m2 === 'A') q3Score += 10;
+            if (q3m3 === 'B') q3Score += 10;
+            score += q3Score;
+
+            // Feedback Display
+            document.getElementById('feedback-q1').innerText = q1Correct ? "全對！先自想，再求助，最後覆核。" : "需調整：正確步驟應為先自己想(1) ➔ 請AI幫(2) ➔ 思考驗證(3)。";
+            document.getElementById('feedback-q2').innerText = q2Correct ? "觀念非常正確！懂得查證與修正。" : "請注意：AI 提供的資料不一定正確，不能完全直接相信。";
+            document.getElementById('feedback-q3').innerText = `獲得 ${q3Score}/30 分 (正確答案: (1)C (2)A (3)B)`;
+
+            document.getElementById('score-pill').innerText = `得分: ${score} 分`;
+            document.getElementById('result-feedback-panel').classList.remove('hidden');
+
+            // Badge Display & Confetti
+            document.getElementById('badge-placeholder').classList.add('hidden');
+            document.getElementById('badge-display').classList.remove('hidden');
+            const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('submission-timestamp').innerText = `已於 ${nowTime} 完成認證`;
+
+            // Trigger visual celebration
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            // Save record
+            const submissionRecord = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleString(),
+                gradeClass,
+                studentName,
+                dateVal,
+                score,
+                q1: { A: q1A, B: q1B, C: q1C, correct: q1Correct },
+                q2: { A: q2A, B: q2B, C: q2C, D: q2D, correct: q2Correct },
+                q3: { m1: q3m1, m2: q3m2, m3: q3m3, score: q3Score },
+                q4: { opt1: q4opt1, opt2: q4opt2, opt3: q4opt3, other: q4Other },
+                pledgeCompleted: true
+            };
+
+            submissions.unshift(submissionRecord);
+            localStorage.setItem('ai_worksheet_submissions', JSON.stringify(submissions));
+
+            // Automatically popup Certificate Modal for student download!
+            openCertificateModal(submissionRecord.id);
+        }
+
+        // Render Teacher Submissions Table
+        function renderTable() {
+            const tbody = document.getElementById('submission-table-body');
+            const emptyState = document.getElementById('empty-state');
+            const countBadge = document.getElementById('badge-submission-count');
+
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            countBadge.innerText = `${submissions.length} 筆數據`;
+
+            if (submissions.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            submissions.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+                const q1Status = item.q1.correct 
+                    ? `<span class="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">正確</span>` 
+                    : `<span class="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold">需輔導</span>`;
+
+                const q3Status = item.q3.score === 30 
+                    ? `<span class="text-xs px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold">全對</span>` 
+                    : `<span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-700 rounded">${item.q3.score}/30</span>`;
+
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-400">${submissions.length - index}</td>
+                    <td class="p-4 text-xs text-slate-500 whitespace-nowrap">${item.timestamp}</td>
+                    <td class="p-4 font-bold text-slate-800">${escapeHtml(item.gradeClass)}</td>
+                    <td class="p-4 font-bold text-slate-900">${escapeHtml(item.studentName)}</td>
+                    <td class="p-4 font-black ${item.score >= 80 ? 'text-emerald-600' : 'text-amber-600'}">${item.score} 分</td>
+                    <td class="p-4">${q1Status}</td>
+                    <td class="p-4">${q3Status}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="openDetailModal(${item.id})" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg text-xs font-bold border border-teal-200 transition">
+                                <i class="fa-solid fa-eye mr-1"></i> 明細
+                            </button>
+                            <button onclick="openCertificateModal(${item.id})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border border-amber-200 transition">
+                                <i class="fa-solid fa-award mr-1"></i> 榮譽證書
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update Backend Stats Summary Cards
+        function updateDashboardStats() {
+            const totalCount = submissions.length;
+            document.getElementById('stat-total-count').innerText = totalCount;
+
+            if (totalCount === 0) {
+                document.getElementById('stat-avg-score').innerText = '0 分';
+                document.getElementById('stat-q1-rate').innerText = '0%';
+                document.getElementById('stat-q3-rate').innerText = '0%';
+                return;
+            }
+
+            const totalScore = submissions.reduce((acc, curr) => acc + curr.score, 0);
+            const avgScore = Math.round(totalScore / totalCount);
+
+            const q1CorrectCount = submissions.filter(s => s.q1.correct).length;
+            const q1Rate = Math.round((q1CorrectCount / totalCount) * 100);
+
+            const q3FullCount = submissions.filter(s => s.q3.score === 30).length;
+            const q3Rate = Math.round((q3FullCount / totalCount) * 100);
+
+            document.getElementById('stat-avg-score').innerText = `${avgScore} 分`;
+            document.getElementById('stat-q1-rate').innerText = `${q1Rate}%`;
+            document.getElementById('stat-q3-rate').innerText = `${q3Rate}%`;
+        }
+
+        // Open Modal Details
+        function openDetailModal(id) {
+            const item = submissions.find(s => s.id === id);
+            if (!item) return;
+
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl text-xs">
+                    <div><strong>班級:</strong> ${escapeHtml(item.gradeClass)}</div>
+                    <div><strong>姓名/座號:</strong> ${escapeHtml(item.studentName)}</div>
+                    <div><strong>填答日期:</strong> ${item.dateVal || '未填'}</div>
+                    <div><strong>提交時間:</strong> ${item.timestamp}</div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <p class="font-bold text-amber-900 text-xs">第一關:「思考」小達人 選擇:</p>
+                        <p class="text-xs text-slate-700 mt-1">A. ${item.q1.A || '未選'} | B. ${item.q1.B || '未選'} | C. ${item.q1.C || '未選'} (${item.q1.correct ? '正確: B->1, C->2, A->3' : '排序未完全正確'})</p>
+                    </div>
+
+                    <div class="p-3 bg-sky-50 rounded-xl border border-sky-200">
+                        <p class="font-bold text-sky-900 text-xs">第二關:「查證」小神探 勾選:</p>
+                        <p class="text-xs text-slate-700 mt-1">
+                            A:${item.q2.A ? '✓' : '✗'}, B:${item.q2.B ? '✓' : '✗'}, C:${item.q2.C ? '✓' : '✗'}, D:${item.q2.D ? '✓' : '✗'}
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                        <p class="font-bold text-purple-900 text-xs">第三關:「尊重與保護」安全官 配對:</p>
+                        <p class="text-xs text-slate-700 mt-1">(1): ${item.q3.m1 || '-'} | (2): ${item.q3.m2 || '-'} | (3): ${item.q3.m3 || '-'}</p>
+                    </div>
+
+                    <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <p class="font-bold text-emerald-900 text-xs">第四關: 善用 AI 的用途:</p>
+                        <ul class="list-disc pl-4 text-xs text-slate-700 mt-1">
+                            ${item.q4.opt1 ? '<li>查詢統整資料</li>' : ''}
+                            ${item.q4.opt2 ? '<li>給我解決策略</li>' : ''}
+                            ${item.q4.opt3 ? '<li>創造故事點子</li>' : ''}
+                        </ul>
+                        ${item.q4.other ? `<p class="text-xs text-slate-600 mt-1"><strong>其他想法:</strong> ${escapeHtml(item.q4.other)}</p>` : ''}
+                    </div>
+
+                    <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs text-emerald-900">
+                        <i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> 已全數勾選承諾「我的 AI 行動宣言」
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        // Export Data Functions (CSV & JSON)
+        function exportToCSV() {
+            if (submissions.length === 0) {
+                alert('目前沒有資料可供匯出！');
+                return;
+            }
+
+            let csvContent = "\uFEFF提交時間,班級,姓名,得分,Q1思考正確,Q3安全得分,第四關其他想法\n";
+
+            submissions.forEach(s => {
+                const row = [
+                    `"${s.timestamp}"`,
+                    `"${s.gradeClass}"`,
+                    `"${s.studentName}"`,
+                    s.score,
+                    s.q1.correct ? "是" : "否",
+                    s.q3.score,
+                    `"${(s.q4.other || '').replace(/"/g, '""')}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AI人權學習單提交紀錄_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToJSON() {
+            if (submissions.length === 0) {
+                alert('目前沒有資料可供匯出！');
+                return;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(submissions, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `AI人權學習單數據彙整_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Demo Data Generation
+        function loadDemoData() {
+            const demo = [
+                {
+                    id: 1700000000001,
+                    timestamp: "2026/10/15 上午 09:15",
+                    gradeClass: "三年1班",
+                    studentName: "王小明",
+                    dateVal: "2026-10-15",
+                    score: 100,
+                    q1: { A: "3", B: "1", C: "2", correct: true },
+                    q2: { A: false, B: true, C: true, D: true, correct: true },
+                    q3: { m1: "C", m2: "A", m3: "B", score: 30 },
+                    q4: { opt1: true, opt2: true, opt3: false, other: "幫忙想角色名字" },
+                    pledgeCompleted: true
+                },
+                {
+                    id: 1700000000002,
+                    timestamp: "2026/10/15 上午 09:22",
+                    gradeClass: "三年1班",
+                    studentName: "陳小美",
+                    dateVal: "2026-10-15",
+                    score: 80,
+                    q1: { A: "1", B: "2", C: "3", correct: false },
+                    q2: { A: false, B: true, C: true, D: true, correct: true },
+                    q3: { m1: "C", m2: "A", m3: "B", score: 30 },
+                    q4: { opt1: true, opt2: false, opt3: true, other: "" },
+                    pledgeCompleted: true
+                }
+            ];
+
+            submissions = demo;
+            localStorage.setItem('ai_worksheet_submissions', JSON.stringify(submissions));
+            renderTable();
+            updateDashboardStats();
+            alert('成功載入 2 筆測試範例數據！');
+        }
+
+        function clearAllData() {
+            if (confirm('確定要清除所有後台提交紀錄嗎？此動作無法復原。')) {
+                submissions = [];
+                localStorage.removeItem('ai_worksheet_submissions');
+                renderTable();
+                updateDashboardStats();
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
